@@ -69,54 +69,6 @@ public class GymApp extends JFrame {
                 }
             }
         });
-
-        // Setup database with sample data
-        setupDatabase();
-    }
-
-    private void setupDatabase() {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            Statement stmt = conn.createStatement();
-
-            // Create table if not exists
-            String createTable = """
-                CREATE TABLE IF NOT EXISTS GymMembers (
-                    member_id INT PRIMARY KEY,
-                    name VARCHAR(100),
-                    membership_type VARCHAR(50),
-                    fees DOUBLE
-                )
-                """;
-            stmt.executeUpdate(createTable);
-
-            // Check if table already has data
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM GymMembers");
-            rs.next();
-            int count = rs.getInt(1);
-
-            // Insert sample data if empty
-            if (count == 0) {
-                String insertSamples = """
-                    INSERT INTO GymMembers (member_id, name, membership_type, fees) VALUES
-                    (101, 'Aayush Mehra', 'Monthly', 1500),
-                    (102, 'Shubhi Vijay', 'Quarterly', 4000),
-                    (103, 'Anuj Sharma', 'Annual', 12000),
-                    (104, 'Krishna Patel', 'Half-Yearly', 7000),
-                    (105, 'Ananya Rao', 'Monthly', 1600),
-                    (106, 'Niyoni Das', 'Annual', 11000),
-                    (107, 'Hamsini Iyer', 'Quarterly', 4200),
-                    (108, 'Yash Kapoor', 'Monthly', 1400)
-                    """;
-                stmt.executeUpdate(insertSamples);
-                JOptionPane.showMessageDialog(this, "Sample data inserted into database!");
-            }
-
-            conn.close();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Database setup error: " + ex.getMessage());
-        }
     }
 
     private void addMember() {
@@ -163,4 +115,60 @@ public class GymApp extends JFrame {
 
     private void updateMember() {
         try {
-            Class.forName("com.mysql.cj.
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+            String query = "UPDATE GymMembers SET name=?, membership_type=?, fees=? WHERE member_id=?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, nameField.getText());
+            pstmt.setString(2, typeField.getText());
+            pstmt.setDouble(3, Double.parseDouble(feesField.getText()));
+            pstmt.setInt(4, Integer.parseInt(idField.getText()));
+            int rows = pstmt.executeUpdate();
+            conn.close();
+            if(rows > 0) {
+                JOptionPane.showMessageDialog(this, "Member updated successfully!");
+                clearFields();
+                loadMembers();
+            } else {
+                JOptionPane.showMessageDialog(this, "No member found with this ID!");
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private void deleteMember() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+            String query = "DELETE FROM GymMembers WHERE member_id=?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setInt(1, Integer.parseInt(idField.getText()));
+            int rows = pstmt.executeUpdate();
+            conn.close();
+            if(rows > 0) {
+                JOptionPane.showMessageDialog(this, "Member deleted successfully!");
+                clearFields();
+                loadMembers();
+            } else {
+                JOptionPane.showMessageDialog(this, "No member found with this ID!");
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+        }
+    }
+
+    private void clearFields() {
+        idField.setText("");
+        nameField.setText("");
+        typeField.setText("");
+        feesField.setText("");
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            GymApp app = new GymApp();
+            app.setVisible(true);
+        });
+    }
+}
